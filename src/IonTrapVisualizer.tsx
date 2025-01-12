@@ -8,11 +8,11 @@ import {
   ZAxis,
   Tooltip,
   ReferenceDot,
+  ResponsiveContainer,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { AlertCircle, Check, Search } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 
 // Stable presets calculated from Mathieu equation stability regions
@@ -196,13 +196,15 @@ const IonTrapVisualizer: React.FC = () => {
   };
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Ion Trap Simulator</CardTitle>
+    <div className="h-full p-4">
+      <Card className="h-full border-purple-500/20">
+        <CardHeader className="border-b border-purple-500/20 bg-purple-500/5">
+          <CardTitle className="text-2xl font-bold text-purple-300">
+            Ion Trap Simulator
+          </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-8">
+        <CardContent className="h-[calc(100%-5rem)] bg-background/50">
+          <div className="flex flex-col h-full space-y-6 py-4">
             {/* Preset buttons */}
             <div className="flex flex-wrap gap-2">
               {Object.keys(PRESETS).map((presetName) => (
@@ -211,8 +213,14 @@ const IonTrapVisualizer: React.FC = () => {
                   variant={
                     selectedPreset === presetName ? "default" : "outline"
                   }
-                  // @ts-ignore
-                  onClick={() => handlePresetClick(presetName)}
+                  className={
+                    selectedPreset === presetName
+                      ? "bg-purple-600 hover:bg-purple-700"
+                      : "hover:bg-purple-500/10 border-purple-500/20"
+                  }
+                  onClick={() =>
+                    handlePresetClick(presetName as keyof typeof PRESETS)
+                  }
                 >
                   {presetName}
                 </Button>
@@ -221,6 +229,7 @@ const IonTrapVisualizer: React.FC = () => {
                 variant="secondary"
                 disabled
                 title="Automatic stability search coming soon"
+                className="opacity-50"
               >
                 <Search className="h-4 w-4 mr-2" />
                 Find Stable Region
@@ -228,21 +237,29 @@ const IonTrapVisualizer: React.FC = () => {
             </div>
 
             {/* Status indicator */}
-            <Alert variant={isStable ? "default" : "destructive"}>
-              {isStable ? (
-                <Check className="h-4 w-4" />
-              ) : (
-                <AlertCircle className="h-4 w-4" />
-              )}
-              <AlertDescription>
-                {isStable ? "Trap is stable" : "Trap is unstable"}
-              </AlertDescription>
-            </Alert>
+            <div className="flex items-center justify-center p-4 bg-purple-500/5 rounded-lg border border-purple-500/20">
+              <div
+                className={`flex items-center gap-3 px-6 py-3 rounded-full ${
+                  isStable
+                    ? "bg-green-500/10 text-green-400 dark:bg-green-500/20"
+                    : "bg-red-500/10 text-red-400 dark:bg-red-500/20"
+                }`}
+              >
+                {isStable ? (
+                  <Check className="h-5 w-5 animate-pulse" />
+                ) : (
+                  <AlertCircle className="h-5 w-5 animate-pulse" />
+                )}
+                <span className="font-semibold text-base">
+                  {isStable ? "Trap is stable" : "Trap is unstable"}
+                </span>
+              </div>
+            </div>
 
             {/* Controls */}
-            <div className="space-y-4">
+            <div className="space-y-6 bg-purple-500/5 p-6 rounded-lg border border-purple-500/20">
               <div className="space-y-2">
-                <label className="text-sm font-medium">
+                <label className="text-sm font-medium text-purple-300">
                   DC Voltage (U): {params.U.toFixed(3)} V
                 </label>
                 <Slider
@@ -254,10 +271,11 @@ const IonTrapVisualizer: React.FC = () => {
                   min={0}
                   max={2}
                   step={0.1}
+                  className="[&_.bg-primary]:bg-purple-500"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">
+                <label className="text-sm font-medium text-purple-300">
                   RF Voltage (V): {params.V.toFixed(1)} V
                 </label>
                 <Slider
@@ -269,10 +287,11 @@ const IonTrapVisualizer: React.FC = () => {
                   min={0}
                   max={20}
                   step={0.5}
+                  className="[&_.bg-primary]:bg-purple-500"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">
+                <label className="text-sm font-medium text-purple-300">
                   RF Frequency (Ω): {(params.omega / 1e6).toFixed(1)} MHz
                 </label>
                 <Slider
@@ -284,61 +303,66 @@ const IonTrapVisualizer: React.FC = () => {
                   min={1}
                   max={10}
                   step={0.5}
+                  className="[&_.bg-primary]:bg-purple-500"
                 />
               </div>
             </div>
 
             {/* Trajectory plot */}
-            <div className="mt-4">
-              <ScatterChart
-                width={600}
-                height={400}
-                margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
-              >
-                <CartesianGrid />
-                <XAxis
-                  type="number"
-                  dataKey="x"
-                  name="X Position"
-                  unit="mm"
-                  domain={[-2, 2]}
-                />
-                <YAxis
-                  type="number"
-                  dataKey="y"
-                  name="Y Position"
-                  unit="mm"
-                  domain={[-2, 2]}
-                />
-                <ZAxis range={[4]} />
-                <Tooltip
-                  cursor={{ strokeDasharray: "3 3" }}
-                  formatter={(value: number | string) =>
-                    typeof value === "number" ? value.toFixed(3) : value
-                  }
-                />
-                <Scatter
-                  name="Ion Position (Stable)"
-                  // @ts-ignore
-                  data={trajectory.filter((p: any) => p.stable)} // Assuming setTrajectory is the correct variable
-                  fill="#8884d8"
-                />
-                <Scatter
-                  name="Ion Position (Unstable)"
-                  // @ts-ignore
-                  data={trajectory.filter((p) => !p.stable)}
-                  fill="#ff0000"
-                />
-                {lastStablePoint && (
-                  <ReferenceDot
-                    x={lastStablePoint.x}
-                    y={lastStablePoint.y}
-                    r={6}
-                    fill="#ffd700"
-                    stroke="none"
+            <div className="flex-grow min-h-[400px] bg-purple-500/5 p-4 rounded-lg border border-purple-500/20">
+              <ResponsiveContainer width="100%" height="100%">
+                <ScatterChart
+                  margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#666" />
+                  <XAxis
+                    type="number"
+                    dataKey="x"
+                    name="X Position"
+                    unit="mm"
+                    domain={[-2, 2]}
+                    stroke="#999"
                   />
-                )}
-              </ScatterChart>
+                  <YAxis
+                    type="number"
+                    dataKey="y"
+                    name="Y Position"
+                    unit="mm"
+                    domain={[-2, 2]}
+                    stroke="#999"
+                  />
+                  <ZAxis range={[4]} />
+                  <Tooltip
+                    cursor={{ strokeDasharray: "3 3" }}
+                    contentStyle={{
+                      backgroundColor: "rgba(23, 23, 23, 0.9)",
+                      border: "1px solid rgba(147, 51, 234, 0.2)",
+                    }}
+                    formatter={(value: number | string) =>
+                      typeof value === "number" ? value.toFixed(3) : value
+                    }
+                  />
+                  <Scatter
+                    name="Ion Position (Stable)"
+                    data={trajectory.filter((p) => p.stable)}
+                    fill="#a855f7"
+                  />
+                  <Scatter
+                    name="Ion Position (Unstable)"
+                    data={trajectory.filter((p) => !p.stable)}
+                    fill="#ef4444"
+                  />
+                  {lastStablePoint && (
+                    <ReferenceDot
+                      x={lastStablePoint.x}
+                      y={lastStablePoint.y}
+                      r={6}
+                      fill="#ffd700"
+                      stroke="none"
+                    />
+                  )}
+                </ScatterChart>
+              </ResponsiveContainer>
             </div>
           </div>
         </CardContent>
